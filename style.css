@@ -1,0 +1,287 @@
+:root {
+  --bg: #070b08;
+  --panel: #0f1610;
+  --panel-border: #26362a;
+  --text: #eef3e6;
+  --muted: #a3b39f;
+  --accent: #d6f27a;
+  --focus: #9fd8ff;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.4;
+}
+
+header, footer {
+  padding: 1rem 1.25rem 0.5rem;
+}
+
+h1 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: normal;
+  letter-spacing: 0.04em;
+}
+
+.subtitle, footer {
+  color: var(--muted);
+  margin: 0.25rem 0 0;
+  max-width: 60rem;
+}
+
+footer {
+  font-size: 0.9rem;
+}
+
+main {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 19rem;
+  gap: 1rem;
+  padding: 0.5rem 1.25rem 1rem;
+}
+
+@media (max-width: 820px) {
+  main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.canvas-wrap {
+  width: 100%;
+  height: min(72vh, 680px);
+  min-height: 300px;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: #040705;
+}
+
+@media (max-width: 820px) {
+  .canvas-wrap {
+    height: auto;
+    aspect-ratio: 1;
+    min-height: 0;
+  }
+}
+
+#meadow {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.stage-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-top: 0.5rem;
+}
+
+.status {
+  margin: 0;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 0.88rem;
+  margin: 0.5rem 0 0;
+}
+
+kbd {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.85em;
+  padding: 0 0.3em;
+  border: 1px solid var(--panel-border);
+  border-radius: 3px;
+  background: var(--panel);
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+fieldset {
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  background: var(--panel);
+}
+
+legend {
+  padding: 0 0.35rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+fieldset > label {
+  display: block;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+fieldset > label:first-of-type {
+  margin-top: 0;
+}
+
+.param {
+  margin-top: 0.6rem;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+}
+
+input[type="range"]:disabled {
+  opacity: 0.4;
+}
+
+.param-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.param-head output, .readout {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+.readout {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+input[type="range"], select {
+  width: 100%;
+}
+
+select {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  padding: 0.25rem;
+  font: inherit;
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+button {
+  font: inherit;
+  font-size: 0.88rem;
+  color: var(--text);
+  background: #17231a;
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #213325;
+}
+
+button:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+#meadow {
+  cursor: crosshair;
+  touch-action: none;
+}
+
+#sweep, #circle, #trace {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: var(--bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+}
+
+
+[hidden] {
+  display: none !important;
+}
+
+.param > label {
+  display: block;
+  font-size: 0.9rem;
+  margin-bottom: 0.2rem;
+}
+
+.instruments {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+@media (max-width: 560px) {
+  .instruments {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+figure {
+  margin: 0;
+}
+
+figcaption {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-top: 0.35rem;
+}
+
+var {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.sweep-buttons {
+  margin-top: 0.5rem;
+}
+
+.readout + .readout, .param + .readout {
+  margin-top: 0.4rem;
+}
+
+#circle {
+  aspect-ratio: 1;
+}
+
+#trace {
+  aspect-ratio: 14 / 9;
+}
+
+#sweep {
+  aspect-ratio: 28 / 19;
+}

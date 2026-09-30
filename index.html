@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Lampyrid</title>
+  <meta name="description" content="Fireflies that learn to flash together: the Kuramoto model of coupled oscillators in the browser, with live order parameter and the exact synchronization threshold." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%23070b08'/%3E%3Ccircle cx='8' cy='8' r='5' fill='%23e2ff78' fill-opacity='0.25'/%3E%3Ccircle cx='8' cy='8' r='2.5' fill='%23e2ff78'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Lampyrid</h1>
+    <p class="subtitle">A meadow of fireflies, each flashing to its own rhythm and each nudging itself toward the flashes it sees. Turn up the coupling and watch the moment the meadow starts to pulse as one.</p>
+  </header>
+
+  <main>
+    <section class="stage" aria-label="Meadow">
+      <div class="canvas-wrap">
+        <canvas id="meadow" role="img" aria-label="Meadow of fireflies, each lit when it flashes"></canvas>
+      </div>
+      <div class="stage-bar">
+        <p id="status" class="status" aria-live="off"></p>
+        <div class="buttons">
+          <button id="play" type="button" aria-pressed="true">Pause</button>
+          <button id="restart" type="button">Scatter phases</button>
+        </div>
+      </div>
+      <p class="hint">Click or drag on the meadow to startle a patch of fireflies out of step. Keys: <kbd>Space</kbd> pauses and resumes, <kbd>R</kbd> scatters every phase, <kbd>S</kbd> runs a sweep.</p>
+
+      <div class="instruments">
+        <figure>
+          <canvas id="circle" width="360" height="360" role="img" aria-label="Phase circle: every firefly as a dot at its phase, with the mean vector"></canvas>
+          <figcaption>Phases on a circle, turning with the crowd. The arrow is the order parameter: its length <var>r</var> runs from 0 (scattered) to 1 (all together). Filled dots are locked.</figcaption>
+        </figure>
+        <figure>
+          <canvas id="trace" width="560" height="360" role="img" aria-label="Order parameter over the last forty seconds"></canvas>
+          <figcaption>Order parameter <var>r</var> over the last 40 seconds. The dashed line is the infinite-meadow prediction for the current settings.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="controls" aria-label="Controls">
+      <fieldset>
+        <legend>Scene</legend>
+        <label for="preset">Preset</label>
+        <select id="preset"></select>
+        <p id="preset-note" class="hint" aria-live="polite"></p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Fireflies</legend>
+        <div class="param">
+          <div class="param-head"><label for="coupling">Coupling <var>K</var></label><output id="coupling-value" for="coupling"></output></div>
+          <input id="coupling" type="range" min="0" max="4" step="0.05" />
+        </div>
+        <p id="threshold" class="readout" aria-live="polite"></p>
+        <div class="param">
+          <label for="distribution">Spread of rhythms</label>
+          <select id="distribution">
+            <option value="lorentzian">Lorentzian (long tails)</option>
+            <option value="gaussian">Gaussian</option>
+            <option value="uniform">Uniform (no stragglers)</option>
+          </select>
+        </div>
+        <div class="param">
+          <div class="param-head"><label for="spread">Spread width</label><output id="spread-value" for="spread"></output></div>
+          <input id="spread" type="range" min="0.1" max="1" step="0.05" />
+        </div>
+        <div class="param">
+          <div class="param-head"><label for="count">Fireflies</label><output id="count-value" for="count"></output></div>
+          <input id="count" type="range" min="50" max="1500" step="10" />
+        </div>
+        <div class="param">
+          <label for="sampling">Rhythms drawn</label>
+          <select id="sampling">
+            <option value="even">Evenly by quantile</option>
+            <option value="random">At random</option>
+          </select>
+        </div>
+        <div class="param">
+          <label for="range">Who sees whom</label>
+          <select id="range"></select>
+        </div>
+        <div class="param" id="radius-row">
+          <div class="param-head"><label for="radius">Sight radius</label><output id="radius-value" for="radius"></output></div>
+          <input id="radius" type="range" min="0.04" max="0.5" step="0.01" />
+        </div>
+        <div class="param">
+          <div class="param-head"><label for="seed">Seed</label><output id="seed-value" for="seed"></output></div>
+          <div class="buttons"><button id="reseed" type="button">New seed</button></div>
+        </div>
+        <div class="param">
+          <div class="param-head"><label for="speed">Speed</label><output id="speed-value" for="speed"></output></div>
+          <input id="speed" type="range" min="0" max="6" step="1" value="3" />
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Sweep</legend>
+        <canvas id="sweep" width="560" height="380" role="img" aria-label="Order parameter against coupling: measured points and the prediction"></canvas>
+        <div class="buttons sweep-buttons">
+          <button id="run-sweep" type="button">Run sweep</button>
+        </div>
+        <p id="sweep-note" class="readout" aria-live="polite"></p>
+        <p class="hint">Steps <var>K</var> from 0 to 4 on a separate copy of the current swarm, lets it settle at each step and averages <var>r</var>. The curve is the prediction for an infinite meadow; below the threshold a finite one still shows <var>r</var> of order 1/&radic;N.</p>
+      </fieldset>
+
+      <fieldset>
+        <legend>View</legend>
+        <label for="colouring">Colour fireflies by</label>
+        <select id="colouring"></select>
+      </fieldset>
+
+      <fieldset>
+        <legend>Keep it</legend>
+        <div class="buttons">
+          <button id="copy-link" type="button">Copy link</button>
+          <button id="save" type="button">Save PNG</button>
+        </div>
+      </fieldset>
+    </section>
+  </main>
+
+  <footer>
+    <p>After Y. Kuramoto, <cite>Chemical Oscillations, Waves, and Turbulence</cite> (Springer, 1984), and S. H. Strogatz, “From Kuramoto to Crawford: exploring the onset of synchronization in populations of coupled oscillators”, <cite>Physica D</cite> 143 (2000).</p>
+  </footer>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
