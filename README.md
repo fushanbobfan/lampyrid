@@ -52,6 +52,17 @@ ends up keeping the same rhythm (the locked share is high) while *r* stays
 low, because the phase varies across the meadow: frequency locking without
 phase agreement.
 
+**Flash pulses.** Real fireflies never see each other's phase, only
+flashes. Switch *Coupling style* to *Flash pulses* (or pick the *Flash
+pulses* preset): each firefly charges up along a bending curve, flashes when
+full and resets, and every flash it sees jolts its own charge upward. Mirollo
+and Strogatz proved that identical fireflies coupled this way, all in sight
+of each other, end up flashing as one from almost every start; with a small spread of rhythms
+the page gets there in well under a minute. Set *Charging curve* to 0 and the
+pull disappears: a jolt then shifts every firefly by the same amount of time.
+*Rival swarms* uses pulses seen only nearby, where neighbourhoods lock on
+their own and large groups end up flashing at different moments.
+
 **Startle them.** Click or drag on the meadow to scramble the phases of a
 patch and watch the crowd pull it back into step.
 
@@ -59,8 +70,11 @@ patch and watch the crowd pull it back into step.
 
 | Control | What it does |
 | --- | --- |
-| Preset | Five starting scenes; changing any setting afterwards shows *Custom* |
-| Coupling *K* | How hard each firefly pulls toward the flashes it sees; changes live |
+| Preset | Seven starting scenes; changing any setting afterwards shows *Custom* |
+| Coupling style | Smooth pull (Kuramoto) or flash pulses (Mirollo–Strogatz) |
+| Coupling *K* | Smooth style: how hard each firefly pulls toward the others; changes live |
+| Pulse strength | Pulse style: total jolt to a firefly's charge if everything it sees flashed |
+| Charging curve | Pulse style: how strongly the charge bends; 0 is a straight line |
 | Spread of rhythms | Lorentzian, Gaussian or uniform distribution of natural frequencies |
 | Spread width | Lorentzian half-width γ, Gaussian σ or uniform half-width, in rad/s |
 | Fireflies | 50 to 1500 |
@@ -93,6 +107,13 @@ phase, <kbd>S</kbd> runs a sweep.
   uniform spread's jump to π/4.
 - `src/lockwatch.js` calls a firefly locked when its phase has slipped less
   than a quarter turn against the mean phase over the last eight seconds.
+- `src/pulse.js` is the pulse-coupled model. A firefly's charge is
+  `x = ln(1 + (e^b − 1) φ) / b` for phase φ in [0, 1); at `x = 1` it flashes
+  and resets, and each firefly that sees it gains `strength / k` in charge.
+  Flashes are delivered in waves within a step, so a jolt that tops a
+  firefly up makes it flash in the same instant, and fireflies that flash
+  together stay together. Tests check the kick size, a two-wave cascade and
+  the Mirollo–Strogatz result that identical fireflies end up in one group.
 - `src/sweep.js` steps through couplings, carrying the phases from one value
   to the next, and averages *r* after a settling time.
 
@@ -100,9 +121,10 @@ phase, <kbd>S</kbd> runs a sweep.
 
 - The theory lines assume an infinite meadow with everyone in sight. With
   local sight the page shows no prediction, since there is no simple formula.
-- Real fireflies are pulse-coupled: they react to discrete flashes rather
-  than to a smooth sine of the phase difference. The Kuramoto model is the
-  standard idealization of that, not a model of any particular species.
+- Neither coupling style is a model of any particular species. Pulses
+  arrive instantly here, with no delay and no refractory period beyond the
+  step in which a firefly flashes, and there is no sweep or prediction for
+  the pulse style.
 - The locked share uses a fixed slip tolerance, so fireflies drifting very
   slowly near the edge of the locking band can be counted as locked.
 
@@ -113,6 +135,8 @@ phase, <kbd>S</kbd> runs a sweep.
 - S. H. Strogatz, "From Kuramoto to Crawford: exploring the onset of
   synchronization in populations of coupled oscillators", *Physica D* 143
   (2000).
+- R. E. Mirollo and S. H. Strogatz, "Synchronization of pulse-coupled
+  biological oscillators", *SIAM Journal on Applied Mathematics* 50 (1990).
 
 ## License
 
