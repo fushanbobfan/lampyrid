@@ -1,0 +1,25 @@
+{
+  "name": "lampyrid",
+  "version": "0.1.0",
+  "description": "Fireflies that learn to flash together: the Kuramoto model of coupled oscillators in the browser, with live order parameter and the exact synchronization threshold.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "serve": "node scripts/serve.js"
+  },
+  "keywords": [
+    "kuramoto",
+    "synchronization",
+    "coupled-oscillators",
+    "fireflies",
+    "simulation",
+    "canvas"
+  ],
+  "license": "MIT",
+  "author": "Jiayi Fan",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fushanbobfan/lampyrid.git"
+  },
+  "private": false
+}
