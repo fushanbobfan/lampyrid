@@ -125,6 +125,13 @@
         <legend>View</legend>
         <label for="colouring">Colour fireflies by</label>
         <select id="colouring"></select>
+        <label for="flashes">Flashes</label>
+        <select id="flashes">
+          <option value="auto">Full glow, up to three a second</option>
+          <option value="always">Always gentle</option>
+        </select>
+        <p id="flash-note" class="hint" aria-live="polite"></p>
+        <p class="hint">Gentle flashes keep each firefly's change in brightness small and drop the halos. They switch on by themselves whenever full flashes would come faster than three a second, and from the start if your system asks for reduced motion.</p>
       </fieldset>
 
       <fieldset>

@@ -5,6 +5,7 @@ import { createLockWatch, isReady, lockedMask, lockedShare, sampleLockWatch } fr
 import { frequencyColour, glow, glowColour, placeFireflies } from './meadow.js';
 import { applyPreset, COLOURINGS, decodeParams, DEFAULTS, encodeParams, normalize, PRESETS, RANGES, STYLES } from './params.js';
 import { createPulseSwarm, pulseStep } from './pulse.js';
+import { flashRate, FLASH_LIMIT_HZ, gentleLevel, gentleOpacity, isGentle } from './safety.js';
 import { advanceSweep, couplingLadder, createSweep, sweepProgress } from './sweep.js';
 import { criticalCoupling, lockedFraction, steadyOrder } from './theory.js';
 
@@ -30,7 +31,7 @@ const els = {
   range: $('range'), radius: $('radius'), radiusValue: $('radius-value'), radiusRow: $('radius-row'),
   seedValue: $('seed-value'), reseed: $('reseed'), speed: $('speed'), speedValue: $('speed-value'),
   runSweep: $('run-sweep'), sweepNote: $('sweep-note'),
-  colouring: $('colouring'), copyLink: $('copy-link'), save: $('save'),
+  colouring: $('colouring'), flashes: $('flashes'), flashNote: $('flash-note'), copyLink: $('copy-link'), save: $('save'),
 };
 
 let params = decodeParams(location.hash) || { ...DEFAULTS };
@@ -39,9 +40,30 @@ let sim = null;
 let sweep = null;
 let sweepResult = null;
 let lastFrame = 0;
+let flashPreference = loadFlashPreference();
 let sinceSample = 0;
 
 // ---------------------------------------------------------------- setup
+
+// A viewer setting, not part of share links: remembered per browser, and
+// gentle from the start for anyone who asks their system for reduced motion.
+function loadFlashPreference() {
+  try {
+    const saved = localStorage.getItem('lampyrid.flashes');
+    if (saved === 'auto' || saved === 'always') return saved;
+  } catch {
+    // storage blocked; fall through to the system setting
+  }
+  return matchMedia('(prefers-reduced-motion: reduce)').matches ? 'always' : 'auto';
+}
+
+function currentSpeed() {
+  return SPEEDS[Number(els.speed.value)];
+}
+
+function gentleNow() {
+  return isGentle(flashPreference, flashRate(DRIFT, currentSpeed()));
+}
 
 function fillSelect(select, entries) {
   select.replaceChildren(...Object.entries(entries).map(([value, label]) => new Option(label, value)));
@@ -143,8 +165,13 @@ function syncControls() {
   } else {
     els.threshold.textContent = `With everyone in sight the threshold would be Kc = ${Kc.toFixed(2)}; with local sight there is no simple formula.`;
   }
-  const speed = SPEEDS[Number(els.speed.value)];
+  const speed = currentSpeed();
   els.speedValue.textContent = `${speed}×`;
+  els.flashes.value = flashPreference;
+  const rate = flashRate(DRIFT, speed);
+  els.flashNote.textContent = flashPreference === 'auto' && rate > FLASH_LIMIT_HZ
+    ? `At ${speed}× the meadow would flash ${rate.toFixed(0)} times a second, so flashes are gentle until you slow down.`
+    : '';
 }
 
 function setParams(next, how) {
@@ -192,6 +219,15 @@ els.preset.addEventListener('change', () => {
 });
 els.reseed.addEventListener('click', () => setParams({ ...params, seed: 1 + Math.floor(Math.random() * 999999) }, 'rebuild'));
 els.speed.addEventListener('input', syncControls);
+els.flashes.addEventListener('change', () => {
+  flashPreference = els.flashes.value === 'always' ? 'always' : 'auto';
+  try {
+    localStorage.setItem('lampyrid.flashes', flashPreference);
+  } catch {
+    // storage blocked; the choice lasts for this visit
+  }
+  syncControls();
+});
 
 function togglePlay() {
   running = !running;
@@ -332,26 +368,33 @@ function drawMeadow() {
   const n = swarm.n;
   const dot = Math.max(1.2, side / Math.sqrt(n) / 7);
   const byFrequency = params.colouring === 'frequency';
+  const gentle = gentleNow();
 
-  ctx.globalCompositeOperation = 'lighter';
-  for (let i = 0; i < n; i++) {
-    const level = glow(swarm.theta[i]);
-    const px = ox + spots.x[i] * side;
-    const py = oy + spots.y[i] * side;
-    const [r, g, b] = byFrequency ? colours[i] : glowColour(level);
-    const bright = byFrequency ? 0.25 + 0.75 * level : 1;
-    if (level > 0.08) {
+  // Halos add up where flashes crowd together; the dots themselves are
+  // painted over them normally, so two touching dots never add to a
+  // brighter spot than either one (which gentle mode relies on).
+  if (!gentle) {
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < n; i++) {
+      const level = glow(swarm.theta[i]);
+      if (level <= 0.08) continue;
+      const [r, g, b] = byFrequency ? colours[i] : glowColour(level);
       ctx.fillStyle = `rgba(${r},${g},${b},${0.16 * level})`;
       ctx.beginPath();
-      ctx.arc(px, py, dot * (2.5 + 4 * level), 0, TAU);
+      ctx.arc(ox + spots.x[i] * side, oy + spots.y[i] * side, dot * (2.5 + 4 * level), 0, TAU);
       ctx.fill();
     }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+  for (let i = 0; i < n; i++) {
+    const level = glow(swarm.theta[i]);
+    const [r, g, b] = byFrequency ? colours[i] : glowColour(gentle ? gentleLevel(level) : level);
+    const bright = byFrequency ? (gentle ? gentleOpacity(level) : 0.25 + 0.75 * level) : 1;
     ctx.fillStyle = `rgba(${r},${g},${b},${bright})`;
     ctx.beginPath();
-    ctx.arc(px, py, dot, 0, TAU);
+    ctx.arc(ox + spots.x[i] * side, oy + spots.y[i] * side, dot, 0, TAU);
     ctx.fill();
   }
-  ctx.globalCompositeOperation = 'source-over';
 }
 
 function drawCircle(r, psi) {
@@ -586,7 +629,7 @@ function advance(seconds) {
 function frame(now) {
   const elapsed = lastFrame ? Math.min(0.1, (now - lastFrame) / 1000) : 0;
   lastFrame = now;
-  if (running) advance(elapsed * SPEEDS[Number(els.speed.value)]);
+  if (running) advance(elapsed * currentSpeed());
   if (sweep) runSweepSlice(8);
   if (isReady(sim.watch)) lockedMask(sim.watch, sim.locked);
   const { r, psi } = orderParameter(sim.swarm.theta);
