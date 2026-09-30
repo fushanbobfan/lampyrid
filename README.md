@@ -57,7 +57,7 @@ flashes. Switch *Coupling style* to *Flash pulses* (or pick the *Flash
 pulses* preset): each firefly charges up along a bending curve, flashes when
 full and resets, and every flash it sees jolts its own charge upward. Mirollo
 and Strogatz proved that identical fireflies coupled this way, all in sight
-of each other, always end up flashing as one; with a small spread of rhythms
+of each other, end up flashing as one from almost every start; with a small spread of rhythms
 the page gets there in well under a minute. Set *Charging curve* to 0 and the
 pull disappears: a jolt then shifts every firefly by the same amount of time.
 *Rival swarms* uses pulses seen only nearby, where neighbourhoods lock on
