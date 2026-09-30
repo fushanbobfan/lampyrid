@@ -11,6 +11,7 @@ test('numbers are clamped, stepped and cleaned of float noise', () => {
   assert.equal(clampParam('coupling', -1), 0);
   assert.equal(clampParam('coupling', '1.23'), 1.25);
   assert.equal(clampParam('spread', 0.149), 0.15);
+  assert.equal(clampParam('spread', 0.001), 0.02);
   assert.equal(clampParam('count', 57), 60);
   assert.equal(clampParam('count', 'abc'), DEFAULTS.count);
   assert.equal(clampParam('distribution', 'weird'), DEFAULTS.distribution);
@@ -39,4 +40,13 @@ test('presets produce valid settings and keep the seed and colouring', () => {
     assert.equal(p.colouring, 'frequency');
     for (const [k, v] of Object.entries(PRESETS[name].params)) assert.equal(p[k], v, `${name}.${k}`);
   }
+});
+
+test('links from before pulse coupling open in the smooth style', () => {
+  const old = decodeParams('#k=2.35&w=0.5&d=lorentzian&n=600&g=global&a=0.12&q=even&r=1&c=glow');
+  assert.equal(old.style, 'smooth');
+  assert.equal(old.strength, DEFAULTS.strength);
+  assert.equal(old.coupling, 2.35);
+  assert.equal(clampParam('strength', 0.7), 0.5);
+  assert.equal(clampParam('curvature', 2.34), 2.3);
 });

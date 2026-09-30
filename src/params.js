@@ -5,14 +5,22 @@ export const RANGES = {
   local: 'Only nearby fireflies',
 };
 
+export const STYLES = {
+  smooth: 'Smooth pull (Kuramoto)',
+  pulse: 'Flash pulses (Mirollo–Strogatz)',
+};
+
 export const COLOURINGS = {
   glow: 'Flash glow',
   frequency: 'Natural frequency',
 };
 
 export const SPECS = {
+  style: { key: 's', values: Object.keys(STYLES) },
   coupling: { key: 'k', min: 0, max: 4, step: 0.05 },
-  spread: { key: 'w', min: 0.1, max: 1, step: 0.05 },
+  strength: { key: 'e', min: 0, max: 0.5, step: 0.01 },
+  curvature: { key: 'b', min: 0, max: 6, step: 0.1 },
+  spread: { key: 'w', min: 0.02, max: 1, step: 0.01 },
   distribution: { key: 'd', values: ['lorentzian', 'gaussian', 'uniform'] },
   count: { key: 'n', min: 50, max: 1500, step: 10 },
   range: { key: 'g', values: Object.keys(RANGES) },
@@ -23,7 +31,7 @@ export const SPECS = {
 };
 
 export const DEFAULTS = {
-  coupling: 1.6, spread: 0.5, distribution: 'lorentzian', count: 600, range: 'global', radius: 0.12,
+  style: 'smooth', coupling: 1.6, strength: 0.12, curvature: 3, spread: 0.5, distribution: 'lorentzian', count: 600, range: 'global', radius: 0.12,
   sampling: 'even', seed: 1, colouring: 'glow',
 };
 
@@ -52,6 +60,16 @@ export const PRESETS = {
     label: 'Waves in the grass',
     note: 'Each firefly sees only its neighbours. Patches lock separately and flashes roll across the meadow as waves.',
     params: { coupling: 3, spread: 0.15, distribution: 'gaussian', range: 'local', radius: 0.07, count: 1200 },
+  },
+  flashes: {
+    label: 'Flash pulses',
+    note: 'Closer to real fireflies: nobody sees a smooth phase, only flashes. Each flash jolts the watchers ahead, and groups that flash together stay together for good.',
+    params: { style: 'pulse', strength: 0.12, curvature: 3, spread: 0.05, distribution: 'gaussian', range: 'global' },
+  },
+  rivals: {
+    label: 'Rival swarms',
+    note: 'Flash pulses seen only nearby. Neighbourhoods fall into step on their own, and big rival groups end up flashing at different moments.',
+    params: { style: 'pulse', strength: 0.1, curvature: 3, spread: 0.05, distribution: 'gaussian', range: 'local', radius: 0.07, count: 1200 },
   },
 };
 
