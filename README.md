@@ -83,10 +83,24 @@ patch and watch the crowd pull it back into step.
 | Seed | Positions, frequencies and starting phases; goes into share links |
 | Speed | 0.25× to 16× simulated time |
 | Colour fireflies by | Flash glow, or natural frequency (cool = slow, warm = fast) |
+| Flashes | Full glow (kept to three flashes a second or fewer) or always gentle |
 | Copy link / Save PNG | Settings in the address bar and clipboard; the meadow as an image |
 
 Keys: <kbd>Space</kbd> pauses and resumes, <kbd>R</kbd> scatters every
 phase, <kbd>S</kbd> runs a sweep.
+
+## Flash safety
+
+A synchronized meadow lights up much of the screen at once. At speeds of 8×
+and 16× that would happen four or eight times a second, past the
+three-flashes-per-second line in WCAG 2.3.1. At those speeds the page
+switches to gentle flashes by itself: every firefly's change in relative
+luminance stays under 0.1 and the halos are dropped, so the flashes no longer
+count as flashes under that rule. *Flashes: Always gentle* keeps it that way
+at every speed. The choice is remembered in the browser, is not part of
+share links, and starts as *Always gentle* when the system asks for reduced
+motion. `src/safety.js` holds the limits, and its tests check the gentle
+ranges against the WCAG luminance formula for every colour the page uses.
 
 ## How it works
 
