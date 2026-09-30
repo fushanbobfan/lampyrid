@@ -35,7 +35,7 @@
         </figure>
         <figure>
           <canvas id="trace" width="560" height="360" role="img" aria-label="Order parameter over the last forty seconds"></canvas>
-          <figcaption>Order parameter <var>r</var> over the last 40 seconds. The dashed line is the infinite-meadow prediction for the current settings.</figcaption>
+          <figcaption>Order parameter <var>r</var> over the last 40 seconds. The dashed line, shown for the smooth pull with everyone in sight, is the infinite-meadow prediction.</figcaption>
         </figure>
       </div>
     </section>
@@ -50,11 +50,26 @@
 
       <fieldset>
         <legend>Fireflies</legend>
-        <div class="param">
-          <div class="param-head"><label for="coupling">Coupling <var>K</var></label><output id="coupling-value" for="coupling"></output></div>
-          <input id="coupling" type="range" min="0" max="4" step="0.05" />
+        <label for="style">Coupling style</label>
+        <select id="style"></select>
+        <div id="coupling-row">
+          <div class="param">
+            <div class="param-head"><label for="coupling">Coupling <var>K</var></label><output id="coupling-value" for="coupling"></output></div>
+            <input id="coupling" type="range" min="0" max="4" step="0.05" />
+          </div>
+          <p id="threshold" class="readout" aria-live="polite"></p>
         </div>
-        <p id="threshold" class="readout" aria-live="polite"></p>
+        <div id="pulse-rows">
+          <div class="param">
+            <div class="param-head"><label for="strength">Pulse strength</label><output id="strength-value" for="strength"></output></div>
+            <input id="strength" type="range" min="0" max="0.5" step="0.01" />
+          </div>
+          <div class="param">
+            <div class="param-head"><label for="curvature">Charging curve</label><output id="curvature-value" for="curvature"></output></div>
+            <input id="curvature" type="range" min="0" max="6" step="0.1" />
+          </div>
+          <p class="hint">A flash jolts every watcher's charge up by the pulse strength shared among what it sees. The charging curve bends the charge so the same jolt moves a firefly further ahead late in its cycle than early, which is what pulls groups into step; at 0 it is straight and a jolt shifts every firefly by the same amount.</p>
+        </div>
         <div class="param">
           <label for="distribution">Spread of rhythms</label>
           <select id="distribution">
@@ -65,7 +80,7 @@
         </div>
         <div class="param">
           <div class="param-head"><label for="spread">Spread width</label><output id="spread-value" for="spread"></output></div>
-          <input id="spread" type="range" min="0.1" max="1" step="0.05" />
+          <input id="spread" type="range" min="0.02" max="1" step="0.01" />
         </div>
         <div class="param">
           <div class="param-head"><label for="count">Fireflies</label><output id="count-value" for="count"></output></div>
@@ -123,7 +138,7 @@
   </main>
 
   <footer>
-    <p>After Y. Kuramoto, <cite>Chemical Oscillations, Waves, and Turbulence</cite> (Springer, 1984), and S. H. Strogatz, “From Kuramoto to Crawford: exploring the onset of synchronization in populations of coupled oscillators”, <cite>Physica D</cite> 143 (2000).</p>
+    <p>After Y. Kuramoto, <cite>Chemical Oscillations, Waves, and Turbulence</cite> (Springer, 1984), and S. H. Strogatz, “From Kuramoto to Crawford: exploring the onset of synchronization in populations of coupled oscillators”, <cite>Physica D</cite> 143 (2000); pulse coupling after R. E. Mirollo and S. H. Strogatz, “Synchronization of pulse-coupled biological oscillators”, <cite>SIAM Journal on Applied Mathematics</cite> 50 (1990).</p>
   </footer>
 
   <script type="module" src="src/main.js"></script>

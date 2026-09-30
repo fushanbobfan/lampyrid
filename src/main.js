@@ -3,7 +3,8 @@ import { drawFrequencies, mulberry32 } from './frequencies.js';
 import { buildNeighbours, createSwarm, orderParameter, randomPhases, step } from './kuramoto.js';
 import { createLockWatch, isReady, lockedMask, lockedShare, sampleLockWatch } from './lockwatch.js';
 import { frequencyColour, glow, glowColour, placeFireflies } from './meadow.js';
-import { applyPreset, COLOURINGS, decodeParams, DEFAULTS, encodeParams, normalize, PRESETS, RANGES } from './params.js';
+import { applyPreset, COLOURINGS, decodeParams, DEFAULTS, encodeParams, normalize, PRESETS, RANGES, STYLES } from './params.js';
+import { createPulseSwarm, pulseStep } from './pulse.js';
 import { advanceSweep, couplingLadder, createSweep, sweepProgress } from './sweep.js';
 import { criticalCoupling, lockedFraction, steadyOrder } from './theory.js';
 
@@ -14,13 +15,16 @@ const SAMPLE_EVERY = 0.25; // seconds between lock-watch and trace samples
 const TRACE_SECONDS = 40;
 const SPEEDS = [0.25, 0.5, 1, 2, 4, 8, 16];
 const K_MAX = 4;
+const PULSE_SWEEP_NOTE = 'Sweeps step the smooth coupling K; switch back to the smooth pull to run one.';
 
 const $ = (id) => document.getElementById(id);
 const els = {
   meadow: $('meadow'), circle: $('circle'), trace: $('trace'), sweep: $('sweep'),
   status: $('status'), play: $('play'), restart: $('restart'),
   preset: $('preset'), presetNote: $('preset-note'),
+  style: $('style'), couplingRow: $('coupling-row'), pulseRows: $('pulse-rows'),
   coupling: $('coupling'), couplingValue: $('coupling-value'), threshold: $('threshold'),
+  strength: $('strength'), strengthValue: $('strength-value'), curvature: $('curvature'), curvatureValue: $('curvature-value'),
   distribution: $('distribution'), spread: $('spread'), spreadValue: $('spread-value'),
   count: $('count'), countValue: $('count-value'), sampling: $('sampling'),
   range: $('range'), radius: $('radius'), radiusValue: $('radius-value'), radiusRow: $('radius-row'),
@@ -43,6 +47,7 @@ function fillSelect(select, entries) {
   select.replaceChildren(...Object.entries(entries).map(([value, label]) => new Option(label, value)));
 }
 
+fillSelect(els.style, STYLES);
 fillSelect(els.range, RANGES);
 fillSelect(els.colouring, COLOURINGS);
 fillSelect(els.preset, { custom: 'Custom', ...Object.fromEntries(Object.entries(PRESETS).map(([k, v]) => [k, v.label])) });
@@ -55,7 +60,9 @@ function build({ keepPhases = false } = {}) {
   const spots = placeFireflies(n, params.seed);
   const neighbours = params.range === 'local' ? buildNeighbours(spots.x, spots.y, params.radius) : null;
   const theta = keepPhases && sim && sim.swarm.n === n ? sim.swarm.theta : randomPhases(n, mulberry32(params.seed * 7919 + 1));
-  const swarm = createSwarm({ omega, theta, coupling: params.coupling, drift: DRIFT, neighbours });
+  const swarm = params.style === 'pulse'
+    ? createPulseSwarm({ omega, theta, strength: params.strength, curvature: params.curvature, drift: DRIFT, neighbours })
+    : createSwarm({ omega, theta, coupling: params.coupling, drift: DRIFT, neighbours });
   sim = {
     swarm,
     spots,
@@ -85,6 +92,11 @@ function startle(px, py) {
   }
 }
 
+// The infinite-meadow predictions cover smooth coupling with everyone in sight.
+function hasTheory() {
+  return params.style === 'smooth' && params.range === 'global';
+}
+
 // ---------------------------------------------------------------- controls
 
 function matchingPreset() {
@@ -96,6 +108,17 @@ function matchingPreset() {
 }
 
 function syncControls() {
+  const pulse = params.style === 'pulse';
+  els.style.value = params.style;
+  els.couplingRow.hidden = pulse;
+  els.pulseRows.hidden = !pulse;
+  els.strength.value = params.strength;
+  els.strengthValue.textContent = params.strength.toFixed(2);
+  els.curvature.value = params.curvature;
+  els.curvatureValue.textContent = params.curvature.toFixed(1);
+  els.runSweep.disabled = pulse || Boolean(sweep);
+  if (pulse) els.sweepNote.textContent = PULSE_SWEEP_NOTE;
+  else if (els.sweepNote.textContent === PULSE_SWEEP_NOTE) els.sweepNote.textContent = '';
   els.coupling.value = params.coupling;
   els.couplingValue.textContent = params.coupling.toFixed(2);
   els.distribution.value = params.distribution;
@@ -128,11 +151,15 @@ function setParams(next, how) {
   const prev = params;
   params = normalize(next);
   if (how === 'coupling') sim.swarm.coupling = params.coupling;
+  else if (how === 'pulse') {
+    sim.swarm.strength = params.strength;
+    sim.swarm.curvature = params.curvature;
+  }
   else if (how === 'view') {
     // nothing to rebuild
-  } else if (how === 'range') build({ keepPhases: true });
+  } else if (how === 'range' || how === 'style') build({ keepPhases: true });
   else build();
-  const sweepStale = ['distribution', 'spread', 'range', 'radius', 'count', 'seed', 'sampling'].some((k) => prev[k] !== params[k]);
+  const sweepStale = ['style', 'distribution', 'spread', 'range', 'radius', 'count', 'seed', 'sampling'].some((k) => prev[k] !== params[k]);
   if (sweepStale && (sweepResult || sweep)) {
     // A sweep belongs to the swarm it was run on; drop it once that changes.
     sweepResult = null;
@@ -149,9 +176,12 @@ function onRange(input, name, how) {
 }
 
 onRange(els.coupling, 'coupling', 'coupling');
+onRange(els.strength, 'strength', 'pulse');
+onRange(els.curvature, 'curvature', 'pulse');
 onRange(els.spread, 'spread', 'rebuild');
 onRange(els.count, 'count', 'rebuild');
 onRange(els.radius, 'radius', 'range');
+els.style.addEventListener('change', () => setParams({ ...params, style: els.style.value }, 'style'));
 els.distribution.addEventListener('change', () => setParams({ ...params, distribution: els.distribution.value }, 'rebuild'));
 els.sampling.addEventListener('change', () => setParams({ ...params, sampling: els.sampling.value }, 'rebuild'));
 els.range.addEventListener('change', () => setParams({ ...params, range: els.range.value }, 'range'));
@@ -227,6 +257,7 @@ els.save.addEventListener('click', () => {
 // ---------------------------------------------------------------- sweep
 
 function startSweep() {
+  if (params.style !== 'smooth' || sweep) return;
   const omega = sim.swarm.omega;
   const neighbours = sim.swarm.neighbours;
   sweep = createSweep({ omega, couplings: couplingLadder(0, K_MAX, 21), seed: params.seed, dt: 0.05, settle: 25, measure: 15, neighbours });
@@ -338,7 +369,7 @@ function drawCircle(r, psi) {
   ctx.arc(cx, cy, R, 0, TAU);
   ctx.stroke();
 
-  const want = params.range === 'global' ? steadyOrder(params.distribution, params.spread, params.coupling) : 0;
+  const want = hasTheory() ? steadyOrder(params.distribution, params.spread, params.coupling) : 0;
   if (want > 0) {
     ctx.setLineDash([4, 5]);
     ctx.strokeStyle = '#6f8a63';
@@ -430,7 +461,7 @@ function drawTrace() {
   const sy = linearScale(0, 1, box.bottom, box.top);
   axes(ctx, box, niceTicks(-TRACE_SECONDS, 0, 4), niceTicks(0, 1, 5), sx, sy, 'seconds ago', 'r', (v) => String(-v));
 
-  const want = params.range === 'global' ? steadyOrder(params.distribution, params.spread, params.coupling) : null;
+  const want = hasTheory() ? steadyOrder(params.distribution, params.spread, params.coupling) : null;
   if (want !== null) {
     ctx.setLineDash([6, 6]);
     ctx.strokeStyle = '#6f8a63';
@@ -469,7 +500,7 @@ function drawSweep() {
 
   const lw = Math.max(1.5, canvas.width / 300);
   const Kc = criticalCoupling(params.distribution, params.spread);
-  if (params.range === 'global') {
+  if (hasTheory()) {
     ctx.strokeStyle = '#6f8a63';
     ctx.lineWidth = lw;
     ctx.beginPath();
@@ -516,7 +547,7 @@ function drawSweep() {
 
 function updateStatus(r) {
   const parts = [`r = ${r.toFixed(2)}`];
-  const global = params.range === 'global';
+  const global = hasTheory();
   if (global) parts[0] += ` (theory ${steadyOrder(params.distribution, params.spread, params.coupling).toFixed(2)})`;
   if (isReady(sim.watch)) {
     let text = `locked ${Math.round(lockedShare(sim.watch) * 100)}%`;
@@ -539,8 +570,9 @@ function advance(seconds) {
   owed = Math.min(owed + seconds, 4000 * DT);
   const steps = Math.floor(owed / DT + 1e-9);
   owed -= steps * DT;
+  const stepSwarm = sim.swarm.kind === 'pulse' ? pulseStep : step;
   for (let s = 0; s < steps; s++) {
-    step(sim.swarm, DT);
+    stepSwarm(sim.swarm, DT);
     sim.frame = (sim.frame + DRIFT * DT) % TAU;
     sinceSample += DT;
     if (sinceSample >= SAMPLE_EVERY - 1e-9) {

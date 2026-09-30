@@ -209,6 +209,15 @@ button:hover {
   background: #213325;
 }
 
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+button:disabled:hover {
+  background: #17231a;
+}
+
 button:focus-visible, input:focus-visible, select:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 1px;
